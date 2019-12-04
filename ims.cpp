@@ -15,6 +15,27 @@ Store FiberFactories(10000);
 #define LOWEST_PLASTICS_OIL 13
 #define HIGHEST_PLASTICS_OIL 15
 
+class WatchDog : public Event
+{
+public:
+    void Behavior()
+    {
+        if(landfillPlastics <= 0)
+        {
+            std::cout << "Koniec, plasty su spotrebovane";
+            Abort();
+        }
+        else
+        {
+            std::cout << "checkujem, aktualny cas " << Time;
+            std::cout << "\n aktualne plastov " << landfillPlastics;
+        }
+        
+
+        Activate(Time + 500);
+    }
+};
+
 class DieselFactoryProc : public Process
 {
 public:
@@ -47,14 +68,39 @@ public:
     }
 };
 
+class FiberFactoryProc : public Process
+{
+public:
+    void Behavior()
+    {
+        Enter(FiberFactories, 1);
+
+        std::cout << "idem robiť fiber\n";
+
+        Wait(Uniform(0.08, 0.33));      
+        bioPlatics += 1;
+        rawHemp -= 1;
+
+        Leave(FiberFactories, 1);
+        std::cout << "fiber done\n" << Time << "\n";
+    }
+};
+
 class CBDFarmProc : public Process
 {
 public:
     void Behavior()
     {
-        Wait(Uniform(70, 140));
+        while(true)
+        {
+            std::cout << "idem sadiť\n";
+            Wait(Uniform(70, 140));
+            std::cout << "dosadene\n";
 
-        rawHemp += 4.6;
+            rawHemp += 4.6;
+
+            (new FiberFactoryProc)->Activate();
+        }
     }
 };
 
@@ -63,23 +109,49 @@ class IndustrialFarmProc : public Process
 public:
     void Behavior()
     {
-        Wait(Uniform(70, 140));
+        while(true)
+        {
+            std::cout << "idem sadiť\n";
+            Wait(Uniform(70, 140));
+            std::cout << "dosadene\n";
 
-        rawHemp += 13.5;
+            rawHemp += 13.5;
+
+            (new FiberFactoryProc)->Activate();
+        }
     }
 };
 
 int main()
 {
-    Init(0, 10000000);
+    Init(0, 200);
+
+    (new WatchDog)->Activate();
 
     for(int i = 0; i < 15; i++)
     {
         (new DieselFactoryProc)->Activate();
     }
+
+    for(int i = 0; i < 7233; i++)
+    {
+        (new CBDFarmProc)->Activate();
+    }
+
+    for(int i = 0; i < 16878; i++)
+    {
+        (new IndustrialFarmProc)->Activate();
+    }
+
+
     Run();
     DieselFactories.Output();
+    FiberFactories.Output();
     std::cout << "Trvalo to: " << Time << " dní\n";
-    std::cout << bioDiesel;
+    std::cout << "Diesel :" << bioDiesel << "\n";
+    std::cout << "Petrol :" << bioPetrol << "\n";
+    std::cout << "Turbodiesel :" << bioTurboDiesel << "\n";
+    std::cout << "Za tu dobu sa stihlo urobit bioplastov:" << bioPlatics << "\n";
+    std::cout << "Plastov na skladne zostalo:" << landfillPlastics << "\n";
     return 0;   
 }
