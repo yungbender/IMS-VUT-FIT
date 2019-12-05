@@ -1,16 +1,19 @@
 #include <iostream>
 #include <vector>
+#include <unistd.h>
 #include <simlib.h>
 
 long long unsigned landfillPlastics = 6790000000;
-long long unsigned bioPlatics = 0;
-long long unsigned bioDiesel = 0;
-long long unsigned bioPetrol = 0;
-long long unsigned bioTurboDiesel = 0;
 double rawHemp = 0;
+long long unsigned dayWatch = 50;
 
 Store DieselFactories(12);
 Store FiberFactories(10000);
+
+Stat bioPlastics("Vyrobené bioplasty");
+Stat bioDiesel("Vyrobený bio diesel");
+Stat bioPetrol("Vyrobený bio petrolej");
+Stat bioTurboDiesel("Vyrobený bio turbodiesel");
 
 #define LOWEST_PLASTICS_OIL 13
 #define HIGHEST_PLASTICS_OIL 15
@@ -20,19 +23,13 @@ class WatchDog : public Event
 public:
     void Behavior()
     {
-        if(landfillPlastics <= 0)
-        {
-            std::cout << "Koniec, plasty su spotrebovane";
-            Abort();
-        }
-        else
-        {
-            std::cout << "checkujem, aktualny cas " << Time;
-            std::cout << "\n aktualne plastov " << landfillPlastics;
-        }
-        
-
-        Activate(Time + 500);
+        std::cout << "Simulation ran for " << Time << " days (" << (Time / 365) << "years)\n";
+        std::cout << "Currently there is " << bioPlastics.Sum() << " Tons of bioplastics \n";
+        std::cout << "Currently there is " << bioDiesel.Sum() << " Litres of biodiesel \n";
+        std::cout << "Currently there is " << bioPetrol.Sum() << " Litres of biopetrol \n";
+        std::cout << "Currently there is " << bioTurboDiesel.Sum() << " Litres of bioturbodiesel \n";
+        std::cout << "Currently there is " << landfillPlastics << " Tons of plastics left on landfill" << "\n\n";
+        Activate(Time + dayWatch);
     }
 };
 
@@ -41,27 +38,34 @@ class DieselFactoryProc : public Process
 public:
     void Behavior()
     {
+        // Until there is landfillPlastics or end of simulation
         while(landfillPlastics > 0)
         {
-            
             if(landfillPlastics < 13)
             {
+                // Take the remaining plastics
                 landfillPlastics = 0;
             }
             else
             {
-                RandomSeed(time(NULL));
+                // Roll between 13 - 15 Tons of plastics, that it take to create oils
                 landfillPlastics -= Uniform(LOWEST_PLASTICS_OIL, HIGHEST_PLASTICS_OIL);
             }
 
             Enter(DieselFactories, 1);
-
+            
+            // It takes over month to create oil
             Wait(Uniform(28, 31));
 
-            RandomSeed(time(NULL));
-            bioDiesel += Uniform(250, 300);
-            bioTurboDiesel += Uniform(80, 100);
-            bioPetrol += Uniform(40, 50);
+            // 250 - 300 litres of biodiesel
+
+            bioDiesel(Uniform(250, 300));
+
+            // 80 - 100 litres of bioturbodiesel
+            bioTurboDiesel(Uniform(80, 100));
+
+            // 40 - 50 litres of biopetrol
+            bioPetrol(Uniform(40, 50));
 
             Leave(DieselFactories, 1);
         }
@@ -73,16 +77,17 @@ class FiberFactoryProc : public Process
 public:
     void Behavior()
     {
+        // Start the hemp factory job
         Enter(FiberFactories, 1);
 
-        std::cout << "idem robiť fiber\n";
-
-        Wait(Uniform(0.08, 0.33));      
-        bioPlatics += 1;
+        // 1 Ton of hemp fiber takes 2 - 8 hours to create
+        Wait(Uniform(0.08, 0.33));     
+        // 1 Ton of hemp fiber, is already bioplastics 
+        bioPlastics(1);
         rawHemp -= 1;
 
+        // End the job
         Leave(FiberFactories, 1);
-        std::cout << "fiber done\n" << Time << "\n";
     }
 };
 
@@ -91,14 +96,16 @@ class CBDFarmProc : public Process
 public:
     void Behavior()
     {
+        // Until end of the simulation
         while(true)
         {
-            std::cout << "idem sadiť\n";
+            // Perform growing the hemp 70 - 140 days
             Wait(Uniform(70, 140));
-            std::cout << "dosadene\n";
 
+            // Take the unproccessed hemp and put it to the hemp
             rawHemp += 4.6;
 
+            // Call factory to process the raw hemp to fiber
             (new FiberFactoryProc)->Activate();
         }
     }
@@ -109,49 +116,105 @@ class IndustrialFarmProc : public Process
 public:
     void Behavior()
     {
+        // Until end of the simulation
         while(true)
         {
-            std::cout << "idem sadiť\n";
+            // Perform growing the hemp
             Wait(Uniform(70, 140));
-            std::cout << "dosadene\n";
 
+            // Take the unproccessed hemp and put it to the hemp
             rawHemp += 13.5;
 
+            // Call factory to process the raw hemp to fiber
             (new FiberFactoryProc)->Activate();
         }
     }
 };
 
-int main()
+int main(int argc, char *argv[])
 {
-    Init(0, 200);
+    char option;
 
-    (new WatchDog)->Activate();
+    long unsigned days = 365;
+    long unsigned cbdFarms = 7233;
+    long unsigned hempFarms = 16878;
+    long unsigned oilFactories = 15;
+    long unsigned watchDays = 50;
+    bool wasWatchdog = false;
 
-    for(int i = 0; i < 15; i++)
+    while((option = getopt(argc, argv, "d:c:f:o:w:p:")) != -1)
+    {
+        switch(option)
+        {
+            case 'd':
+                days = strtoul(optarg, NULL, 10);
+                break;
+            case 'c':
+                cbdFarms = strtoul(optarg, NULL, 10);
+                break;
+            case 'f':
+                hempFarms = strtoul(optarg, NULL, 10);
+                break;
+            case 'o':
+                oilFactories = strtoul(optarg, NULL, 10);
+                break;
+            case 'w':
+                wasWatchdog = true;
+                dayWatch = strtoul(optarg, NULL, 10);
+                break;
+            case 'p':
+                landfillPlastics = strtoul(optarg, NULL, 10);
+                break;
+            case '?':
+                break;
+            default:
+                break;
+        }
+    }
+    // set simulation time to 0 to days
+    Init(0, days);
+    // Seed so the randomness is real
+    RandomSeed(time(NULL));
+
+    // Little watchdog to inform us about plastics state every X days
+    if(wasWatchdog)
+        (new WatchDog())->Activate();
+
+    // Activate the diesel factories for X factories, to produce
+    for(int i = 0; i < oilFactories; i++)
     {
         (new DieselFactoryProc)->Activate();
     }
 
-    for(int i = 0; i < 7233; i++)
+    // Activate the hemp farms for hemp products and bioplastics
+    for(int i = 0; i < cbdFarms; i++)
     {
         (new CBDFarmProc)->Activate();
     }
 
-    for(int i = 0; i < 16878; i++)
+    // Activate the Industrial hemp farms for bioplastics only
+    for(int i = 0; i < hempFarms; i++)
     {
         (new IndustrialFarmProc)->Activate();
     }
 
-
+    // Run simulations
     Run();
+
+
+    bioPlastics.Output();
+    bioDiesel.Output();
+    bioPetrol.Output();
+    bioTurboDiesel.Output();
     DieselFactories.Output();
     FiberFactories.Output();
-    std::cout << "Trvalo to: " << Time << " dní\n";
-    std::cout << "Diesel :" << bioDiesel << "\n";
-    std::cout << "Petrol :" << bioPetrol << "\n";
-    std::cout << "Turbodiesel :" << bioTurboDiesel << "\n";
-    std::cout << "Za tu dobu sa stihlo urobit bioplastov:" << bioPlatics << "\n";
-    std::cout << "Plastov na skladne zostalo:" << landfillPlastics << "\n";
-    return 0;   
+
+    std::cout << "Simulation ran for " << Time << " days (" << (Time / 365) << "years)\n";
+    std::cout << "There were created " << bioPlastics.Sum() << " Tons of bioplastics \n";
+    std::cout << "There were created " << bioDiesel.Sum() << " Litres of biodiesel \n";
+    std::cout << "There were created " << bioPetrol.Sum() << " Litres of biopetrol \n";
+    std::cout << "There were created " << bioTurboDiesel.Sum() << " Litres of bioturbodiesel \n";
+    std::cout << "There are: " << landfillPlastics << " Tons of plastics left on lanfill" << "\n";
+
+    return 0;
 }

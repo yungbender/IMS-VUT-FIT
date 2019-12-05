@@ -1,6 +1,6 @@
 CC=g++
 FILES=ims.cpp
-FLAGS=-lm -lsimlib -o
+FLAGS=-lm -g -lsimlib -o
 OUTPUT=ims
 
 make:
