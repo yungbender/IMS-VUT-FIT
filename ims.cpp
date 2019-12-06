@@ -32,6 +32,8 @@ public:
     {
         std::cout << "Simulation ran for " << Time << " days (" << (Time / 365) << "years)\n";
         std::cout << "Currently there is " << bioPlastics.Sum() << " Tons of bioplastics \n";
+        std::cout << "Currently there is " << bioPlasticsCorn.Sum() << " Tons of bioplastics made from corn \n";
+        std::cout << "Currently there is " << bioPlasticsHemp.Sum() << " Tons of bioplastics made from hemp \n";
         std::cout << "Currently there is " << bioDiesel.Sum() << " Litres of biodiesel \n";
         std::cout << "Currently there is " << bioPetrol.Sum() << " Litres of biopetrol \n";
         std::cout << "Currently there is " << bioTurboDiesel.Sum() << " Litres of bioturbodiesel \n";
@@ -166,8 +168,8 @@ public:
         cornStover -= 81;
 
         // Make 1 ton of bioplastic
-        bioPlastics(10000);
-        bioPlasticsCorn(10000);
+        bioPlastics(100);
+        bioPlasticsCorn(100);
 
         Leave(CornBioplasticFactory, 1);
     }
