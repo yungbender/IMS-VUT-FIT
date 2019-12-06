@@ -13,6 +13,7 @@ long long unsigned dayWatch = 50;
 Store DieselFactories(12);
 Store FiberFactories(10000);
 Store HarvestCompany(50);
+Store CornBioplasticFactory(50);
 
 Stat bioPlastics("All bioplastics created");
 Stat bioDiesel("Biodiesel created");
@@ -139,22 +140,22 @@ class PlasticFromCornFactoryProc : public Process
 public:
     void Behavior()
     {
-        while(cornGrain >= 1.62 && cornStover >= 0.81)
-        {
-            // Corn bioplastic production time
-            Wait(3.13);
+        Enter(CornBioplasticFactory, 1);
 
-            // Take corn grain from resourcess
-            cornGrain -= 1.62;
-            
-            // Take corn stover from resourcess
-            cornStover -= 0.81;
+        // Corn bioplastic production time
+        Wait(3.13);
 
-            // Make 1 ton of bioplastic
-            bioPlastics(1);
-	        bioPlasticsCorn(1);
-        }
+        // Take corn grain from resourcess
+        cornGrain -= 162;
         
+        // Take corn stover from resourcess
+        cornStover -= 81;
+
+        // Make 1 ton of bioplastic
+        bioPlastics(10000);
+        bioPlasticsCorn(10000);
+
+        Leave(CornBioplasticFactory, 1);
     }
 };
 
@@ -163,25 +164,29 @@ class HarvestCompaniesProc : public Process
 public:
     void Behavior()
     {
-        while(cornFields >= 38426)
+        // Harvest company starts to harvest
+        Enter(HarvestCompany, 1);
+
+        // Remove from unharvested fields
+        cornFields -= 38426;
+
+        // Harvest for 20 days
+        Wait(20);
+
+        // Add harvested corn grain
+        cornGrain += Uniform(145.8, 939);
+
+        // Add harvested corn stover
+        cornStover += Uniform(469.5, 1257.8);
+
+        // Harvest company is done
+        Leave(HarvestCompany, 1);
+        double cornGrainTemp = cornGrain;
+        double cornStoverTemp = cornStover;
+        while(cornGrainTemp >= 162 && cornStoverTemp >= 81)
         {
-            // Remove from unharvested fields
-            cornFields -= 38426;
-
-            // Harvest company starts to harvest
-            Enter(HarvestCompany);
-
-            // Harvest for 20 days
-            Wait(20);
-
-            // Add harvested corn grain
-            cornGrain += Uniform(145.8, 939);
-
-            // Add harvested corn stover
-            cornStover += Uniform(469.5, 1257.8);
-
-            // Harvest company is done
-            Leave(HarvestCompany);
+            cornGrainTemp -= 162;
+            cornStoverTemp -= 81;
             (new PlasticFromCornFactoryProc)->Activate();
         }
     }
@@ -194,12 +199,17 @@ public:
     {
         // Create newly grown corn
         cornFields += 192130000;
+        double cornFieldsTemp = 192130000;
 
         // Create new corna after one year
         Activate(Time + 365);
 
         // Let harvest comapanies know there is corn to harvest
-        (new HarvestCompaniesProc)->Activate();
+        while(cornFieldsTemp >= 38426)
+        {
+            cornFieldsTemp -= 38426; 
+            (new HarvestCompaniesProc)->Activate();
+        }
     }
 };
 
