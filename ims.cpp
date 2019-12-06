@@ -141,7 +141,9 @@ public:
     {
         while(cornGrain >= 1.62 && cornStover >= 0.81)
         {
-            std::cout << "PLASTY\n";
+            // Corn bioplastic production time
+            Wait(3.13);
+
             // Take corn grain from resourcess
             cornGrain -= 1.62;
             
@@ -150,7 +152,7 @@ public:
 
             // Make 1 ton of bioplastic
             bioPlastics(1);
-	    bioPlasticsCorn(1);
+	        bioPlasticsCorn(1);
         }
         
     }
@@ -163,7 +165,6 @@ public:
     {
         while(cornFields >= 38426)
         {
-            std::cout << "HARVEST\n";
             // Remove from unharvested fields
             cornFields -= 38426;
 
@@ -191,11 +192,13 @@ class CornFieldsProc : public Event
 public:
     void Behavior()
     {
-        std::cout << "KUKURICA\n";
         // Create newly grown corn
         cornFields += 192130000;
 
+        // Create new corna after one year
         Activate(Time + 365);
+
+        // Let harvest comapanies know there is corn to harvest
         (new HarvestCompaniesProc)->Activate();
     }
 };
@@ -267,6 +270,7 @@ int main(int argc, char *argv[])
         (new IndustrialFarmProc)->Activate(Uniform(70, 140));
     }
 
+    // Simulation of 1 year corn growing
     (new CornFieldsProc)->Activate(365);
 
     // Run simulations
