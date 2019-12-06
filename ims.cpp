@@ -10,8 +10,8 @@ double cornGrain = 0;
 double cornStover = 0;
 long long unsigned dayWatch = 50;
 
-Store DieselFactories(12);
-Store FiberFactories(10000);
+Store DieselFactories(100);
+Store FiberFactories(100);
 Store HarvestCompany(50);
 Store CornBioplasticFactory(50);
 
@@ -65,14 +65,13 @@ public:
             Wait(Uniform(28, 31));
 
             // 250 - 300 litres of biodiesel
-
             bioDiesel(Uniform(250, 300));
 
             // 80 - 100 litres of bioturbodiesel
-            bioTurboDiesel(Uniform(80, 100));
+            bioTurboDiesel(100);
 
             // 40 - 50 litres of biopetrol
-            bioPetrol(Uniform(40, 50));
+            bioPetrol(50);
 
             Leave(DieselFactories, 1);
         }
@@ -87,12 +86,29 @@ public:
         // Start the hemp factory job
         Enter(FiberFactories, 1);
 
+        if(rawHemp == 0)
+        {
+            return;
+        }
+        // If there is some remaining hemp take it
+        else if(rawHemp < 20) 
+        {
+            bioPlastics(rawHemp);
+            bioPlastics(rawHemp);
+            rawHemp = 0;
+        }
+        // Else make 20 tons 
+        // (Yes, documentation talks about 1 ton per 2 - 8 hours, but we needed to multiply the count, otherwise the calculation
+        //  would take too long)
+        else
+        {
+            bioPlasticsHemp(20);
+            bioPlastics(20);
+            rawHemp -= 20;
+        }
         // 1 Ton of hemp fiber takes 2 - 8 hours to create
-        Wait(Uniform(0.08, 0.33));     
-        // 1 Ton of hemp fiber, is already bioplastics 
-        bioPlasticsHemp(1);
-        bioPlastics(1);
-        rawHemp -= 1;
+        Wait(Uniform(1.6, 6.6));
+        
 
         // End the job
         Leave(FiberFactories, 1);
@@ -104,34 +120,32 @@ class CBDFarmProc : public Event
 public:
     void Behavior()
     {
-            // Take the unproccessed hemp and put it to the hemp
-            rawHemp += 4.6;
+        // Take the unproccessed hemp and put it to the hemp
+        rawHemp += 44.6;
 
-            // Perform next growing
-            Activate(Time + Uniform(70, 140));
+        // Perform next growing
+        Activate(Time + Uniform(70, 140));
 
-            // Call factory to process the raw hemp to fiber
+        // Call factory for each ton to process the raw hemp to fiber
+        if(rawHemp >= 20)
             (new FiberFactoryProc)->Activate();
     }
 };
 
-class IndustrialFarmProc : public Process
+class IndustrialFarmProc : public Event
 {
 public:
     void Behavior()
     {
-        // Until end of the simulation
-        while(true)
-        {
-            // Perform growing the hemp
-            Wait(Uniform(70, 140));
+        // Take the unproccessed hemp and put it to the hemp
+        rawHemp += 135;
 
-            // Take the unproccessed hemp and put it to the hemp
-            rawHemp += 13.5;
+        // Perform next growing
+        Activate(Time + Uniform(70, 140));
 
-            // Call factory to process the raw hemp to fiber
+        // Call factory to process the raw hemp to fiber
+        if(rawHemp >= 20)
             (new FiberFactoryProc)->Activate();
-        }
     }
 };
 
@@ -215,12 +229,13 @@ public:
 
 int main(int argc, char *argv[])
 {
+    std::cout << std::fixed;
     char option;
 
     long unsigned days = 365;
-    long unsigned cbdFarms = 7233;
-    long unsigned hempFarms = 16878;
-    long unsigned oilFactories = 15;
+    long unsigned cbdFarms = 723;
+    long unsigned hempFarms = 1687;
+    long unsigned oilFactories = 100;
     long unsigned watchDays = 50;
     bool wasWatchdog = false;
 
