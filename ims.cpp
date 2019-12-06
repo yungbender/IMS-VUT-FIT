@@ -5,10 +5,14 @@
 
 long long unsigned landfillPlastics = 6790000000;
 double rawHemp = 0;
+double cornFields = 0;
+double cornGrain = 0;
+double cornStover = 0;
 long long unsigned dayWatch = 50;
 
 Store DieselFactories(12);
 Store FiberFactories(10000);
+Store HarvestCompany(50);
 
 Stat bioPlastics("Vyrobené bioplasty");
 Stat bioDiesel("Vyrobený bio diesel");
@@ -131,6 +135,71 @@ public:
     }
 };
 
+class PlasticFromCornFactoryProc : public Process
+{
+public:
+    void Behavior()
+    {
+        while(cornGrain >= 1.62 && cornStover >= 0.81)
+        {
+            std::cout << "PLASTY\n";
+            // Take corn grain from resourcess
+            cornGrain -= 1.62;
+            
+            // Take corn stover from resourcess
+            cornStover -= 0.81;
+
+            // Make 1 ton of bioplastic
+            bioPlastics(1);
+        }
+        
+    }
+};
+
+class HarvestCompaniesProc : public Process
+{
+public:
+    void Behavior()
+    {
+        while(cornFields >= 38426)
+        {
+            std::cout << "HARVEST\n";
+            // Remove from unharvested fields
+            cornFields -= 38426;
+
+            // Harvest company starts to harvest
+            Enter(HarvestCompany);
+
+            // Harvest for 20 days
+            Wait(20);
+
+            // Add harvested corn grain
+            cornGrain += Uniform(145.8, 939);
+
+            // Add harvested corn stover
+            cornStover += Uniform(469.5, 1257.8);
+
+            // Harvest company is done
+            Leave(HarvestCompany);
+            (new PlasticFromCornFactoryProc)->Activate();
+        }
+    }
+};
+
+class CornFieldsProc : public Event
+{
+public:
+    void Behavior()
+    {
+        std::cout << "KUKURICA\n";
+        // Create newly grown corn
+        cornFields += 192130000;
+
+        Activate(Time + 365);
+        (new HarvestCompaniesProc)->Activate();
+    }
+};
+
 int main(int argc, char *argv[])
 {
     char option;
@@ -197,6 +266,8 @@ int main(int argc, char *argv[])
     {
         (new IndustrialFarmProc)->Activate();
     }
+
+    (new CornFieldsProc)->Activate(365);
 
     // Run simulations
     Run();
