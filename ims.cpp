@@ -14,10 +14,12 @@ Store DieselFactories(12);
 Store FiberFactories(10000);
 Store HarvestCompany(50);
 
-Stat bioPlastics("Vyrobené bioplasty");
-Stat bioDiesel("Vyrobený bio diesel");
-Stat bioPetrol("Vyrobený bio petrolej");
-Stat bioTurboDiesel("Vyrobený bio turbodiesel");
+Stat bioPlastics("All bioplastics created");
+Stat bioDiesel("Biodiesel created");
+Stat bioPetrol("Biopetrol created");
+Stat bioTurboDiesel("Bioturbodiesel created");
+Stat bioPlasticsCorn("Bioplastics created by corn");
+Stat bioPlasticsHemp("Bioplastics created by hemp");
 
 #define LOWEST_PLASTICS_OIL 13
 #define HIGHEST_PLASTICS_OIL 15
@@ -87,6 +89,7 @@ public:
         // 1 Ton of hemp fiber takes 2 - 8 hours to create
         Wait(Uniform(0.08, 0.33));     
         // 1 Ton of hemp fiber, is already bioplastics 
+        bioPlasticsHemp(1);
         bioPlastics(1);
         rawHemp -= 1;
 
@@ -95,23 +98,19 @@ public:
     }
 };
 
-class CBDFarmProc : public Process
+class CBDFarmProc : public Event
 {
 public:
     void Behavior()
     {
-        // Until end of the simulation
-        while(true)
-        {
-            // Perform growing the hemp 70 - 140 days
-            Wait(Uniform(70, 140));
-
             // Take the unproccessed hemp and put it to the hemp
             rawHemp += 4.6;
 
+            // Perform next growing
+            Activate(Time + Uniform(70, 140));
+
             // Call factory to process the raw hemp to fiber
             (new FiberFactoryProc)->Activate();
-        }
     }
 };
 
@@ -151,6 +150,7 @@ public:
 
             // Make 1 ton of bioplastic
             bioPlastics(1);
+	    bioPlasticsCorn(1);
         }
         
     }
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
     // Little watchdog to inform us about plastics state every X days
     if(wasWatchdog)
         (new WatchDog())->Activate();
-
+ 
     // Activate the diesel factories for X factories, to produce
     for(int i = 0; i < oilFactories; i++)
     {
@@ -258,13 +258,13 @@ int main(int argc, char *argv[])
     // Activate the hemp farms for hemp products and bioplastics
     for(int i = 0; i < cbdFarms; i++)
     {
-        (new CBDFarmProc)->Activate();
+        (new CBDFarmProc)->Activate(Uniform(70, 140));
     }
 
     // Activate the Industrial hemp farms for bioplastics only
     for(int i = 0; i < hempFarms; i++)
     {
-        (new IndustrialFarmProc)->Activate();
+        (new IndustrialFarmProc)->Activate(Uniform(70, 140));
     }
 
     (new CornFieldsProc)->Activate(365);
@@ -282,6 +282,8 @@ int main(int argc, char *argv[])
 
     std::cout << "Simulation ran for " << Time << " days (" << (Time / 365) << "years)\n";
     std::cout << "There were created " << bioPlastics.Sum() << " Tons of bioplastics \n";
+    std::cout << "Created bioplastics with corn " << bioPlasticsCorn.Sum() << " Tons of bioplastics \n";
+    std::cout << "Created bioplastics with hemp " << bioPlasticsHemp.Sum() << " Tons of bioplastics \n";
     std::cout << "There were created " << bioDiesel.Sum() << " Litres of biodiesel \n";
     std::cout << "There were created " << bioPetrol.Sum() << " Litres of biopetrol \n";
     std::cout << "There were created " << bioTurboDiesel.Sum() << " Litres of bioturbodiesel \n";
