@@ -6,13 +6,14 @@
 long long unsigned landfillPlastics = 6790000000;
 double rawHemp = 0;
 double cornFields = 0;
+double cornFieldsArg = 1921300;
 double cornGrain = 0;
 double cornStover = 0;
 long long unsigned dayWatch = 50;
 
 Store FiberFactories(100);
 Store HarvestCompany(50);
-Store CornBioplasticFactory(50);
+Store CornBioplasticFactory(100);
 
 Stat bioPlastics("All bioplastics created");
 Stat bioDiesel("Biodiesel created");
@@ -160,17 +161,17 @@ public:
         Enter(CornBioplasticFactory, 1);
 
         // Corn bioplastic production time
-        Wait(3.13);
+        Wait(3.35);
 
         // Take corn grain from resourcess
-        cornGrain -= 162;
+        cornGrain -= 1620000;
         
         // Take corn stover from resourcess
-        cornStover -= 81;
+        cornStover -= 810000;
 
         // Make 1 ton of bioplastic
-        bioPlastics(100);
-        bioPlasticsCorn(100);
+        bioPlastics(1000000);
+        bioPlasticsCorn(1000000);
 
         Leave(CornBioplasticFactory, 1);
     }
@@ -191,19 +192,19 @@ public:
         Wait(20);
 
         // Add harvested corn grain
-        cornGrain += Uniform(145.8, 939);
+        cornGrain += Uniform(18040537.5, 48330965);
 
         // Add harvested corn stover
-        cornStover += Uniform(469.5, 1257.8);
+        cornStover += Uniform(5602057, 36081075);
 
         // Harvest company is done
         Leave(HarvestCompany, 1);
         double cornGrainTemp = cornGrain;
         double cornStoverTemp = cornStover;
-        while(cornGrainTemp >= 162 && cornStoverTemp >= 81)
+        while(cornGrainTemp >= 1620000 && cornStoverTemp >= 810000)
         {
-            cornGrainTemp -= 162;
-            cornStoverTemp -= 81;
+            cornGrainTemp -= 1620000;
+            cornStoverTemp -= 810000;
             (new PlasticFromCornFactoryProc)->Activate();
         }
     }
@@ -215,10 +216,10 @@ public:
     void Behavior()
     {
         // Create newly grown corn
-        cornFields += 192130000;
-        double cornFieldsTemp = 192130000;
+        cornFields += cornFieldsArg;
+        double cornFieldsTemp = cornFields;
 
-        // Create new corna after one year
+        // Create new corn after one year
         Activate(Time + 365);
 
         // Let harvest comapanies know there is corn to harvest
@@ -243,7 +244,7 @@ int main(int argc, char *argv[])
     long unsigned watchDays = 50;
     bool wasWatchdog = false;
 
-    while((option = getopt(argc, argv, "d:c:f:o:w:p:")) != -1)
+    while((option = getopt(argc, argv, "d:c:f:o:w:p:r:")) != -1)
     {
         switch(option)
         {
@@ -266,6 +267,9 @@ int main(int argc, char *argv[])
             case 'p':
                 landfillPlastics = strtoul(optarg, NULL, 10);
                 break;
+            case 'r':
+            	cornFieldsArg = strtoul(optarg, NULL, 10);
+            	break;
             case '?':
                 break;
             default:
