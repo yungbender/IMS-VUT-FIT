@@ -1,3 +1,10 @@
+/*
+*   Project for modeling and simulation.
+*   Simulation of usage for useless plastics and bioplastics
+*   Authors: Tomáš Sasák (xsasak01), Martin Krajči (xkrajc21)
+*   BUT FIT 2019
+*/
+
 #include <iostream>
 #include <vector>
 #include <unistd.h>

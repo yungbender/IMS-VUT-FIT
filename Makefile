@@ -5,3 +5,7 @@ OUTPUT=ims
 
 make:
 	$(CC) $(FILES) $(FLAGS) $(OUTPUT)
+
+run: make
+	./ims -d 365
+
