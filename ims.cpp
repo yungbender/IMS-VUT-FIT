@@ -87,6 +87,7 @@ public:
         // Start the hemp factory job
         Enter(FiberFactories, 1);
 
+        double usedRawHemp;
         if(rawHemp == 0)
         {
             return;
@@ -94,8 +95,7 @@ public:
         // If there is some remaining hemp take it
         else if(rawHemp < 20) 
         {
-            bioPlastics(rawHemp);
-            bioPlastics(rawHemp);
+            usedRawHemp = rawHemp;
             rawHemp = 0;
         }
         // 1 Ton of hemp fiber takes 2 - 8 hours to create
@@ -104,11 +104,14 @@ public:
         //  would take too long)
         else
         {
-            bioPlasticsHemp(20);
-            bioPlastics(20);
+            usedRawHemp = 20;
             rawHemp -= 20;
         }
+
         Wait(Uniform(1.6, 6.6));
+
+        bioPlasticsHemp(usedRawHemp);
+        bioPlastics(usedRawHemp);
         
         // End the job
         Leave(FiberFactories, 1);
@@ -120,7 +123,7 @@ class CBDFarmProc : public Event
 public:
     void Behavior()
     {
-        // Take the unproccessed hemp and put it to the hemp
+        // Take the unproccessed hemp and put it to the raw hemp
         rawHemp += 0.54;
 
         // Perform next growing
@@ -149,6 +152,7 @@ public:
             (new FiberFactoryProc)->Activate();
             createdHemp -= 20;
         }
+        // Call one more time for last fiber
         (new FiberFactoryProc)->Activate();
     }
 };
